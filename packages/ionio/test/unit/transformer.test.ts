@@ -43,4 +43,15 @@ describe('transformArtifact', () => {
       ).toString('hex')
     );
   });
+
+  it('should be able to encode and then rename constructor inputs', () => {
+    const artifact = transformArtifact(synth, [
+      AssetHash.fromHex(
+        '5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225',
+        false
+      ).hex,
+      TemplateString('customName'),
+    ]);
+    expect(artifact.constructorInputs[0].name).toBe('customName'); // the second one is renamed + the first one is removed
+  });
 });

@@ -37,12 +37,14 @@ function replaceASMtoken(
 
 function renameConstructorInput(
   artifact: Artifact,
-  inputIndex: number,
+  name: string,
   newName: string
 ): Artifact {
-  const constructorInputToRename = artifact.constructorInputs[inputIndex];
+  const constructorInputToRename = artifact.constructorInputs.find(
+    i => i.name === name
+  );
   if (!constructorInputToRename) {
-    throw new Error(`Constructor input #${inputIndex} not found`);
+    throw new Error(`Constructor input "${name}" not found`);
   }
   return {
     ...artifact,
@@ -61,23 +63,23 @@ function encodeConstructorArg(
   arg: Argument
 ): Artifact {
   // compile the constructor input
-  const constructorInputToRemove = artifact.constructorInputs.find(
+  const constructorInputToCompile = artifact.constructorInputs.find(
     i => i.name === inputName
   );
-  if (!constructorInputToRemove) {
+  if (!constructorInputToCompile) {
     throw new Error(`Constructor input ${inputName} not found`);
   }
-  const argEncoded = encodeArgument(arg, constructorInputToRemove.type);
+  const argEncoded = encodeArgument(arg, constructorInputToCompile.type);
 
   return {
     ...artifact,
     // remove compiled constructor input
     constructorInputs: artifact.constructorInputs.filter(
-      p => p.name !== constructorInputToRemove.name
+      p => p.name !== constructorInputToCompile.name
     ),
     functions: artifact.functions.map(
       replaceASMtoken(
-        '$' + constructorInputToRemove.name,
+        '$' + constructorInputToCompile.name,
         argEncoded.toString('hex')
       )
     ),
@@ -105,7 +107,11 @@ function transformArtifact(
     const arg = args[i];
     if (arg) {
       if (isTemplateStringI(arg)) {
-        newArtifact = renameConstructorInput(newArtifact, i, arg.newName);
+        newArtifact = renameConstructorInput(
+          newArtifact,
+          input.name,
+          arg.newName
+        );
       } else {
         newArtifact = encodeConstructorArg(newArtifact, input.name, arg);
       }
